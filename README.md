@@ -1,6 +1,6 @@
 # Servers
 
-Application that list servers. Data are fixed and application does not use database as a storage.
+Application that manages servers. Data are stored in relational database POSTGRES 13.
 
 Dockerfile contains two runtime stages: 
 - **appServerRuntime**  - Spring Boot application server that provides REST API.
@@ -8,13 +8,33 @@ Dockerfile contains two runtime stages:
 
 [BuildKit](https://github.com/moby/buildkit) is used for building container images.
 
-In order to build **appServerRuntime** image run the following command (Dockerfile has to be in current working direcotry):
+In order to build **appServerRuntime** image run the following command (Dockerfile has to be in current working direcotry and allowed values for stage are dev, test, prod):
 
 ```shell
-DOCKER_BUILDKIT=1 docker build --target appServerRuntime -t danijelradakovic/servers:0.1.0 .
+DOCKER_BUILDKIT=1 docker build --target appServerRuntime --build-args STAGE=dev -t danijelradakovic/servers:0.2.0 .
 ```
 
-In order to build **appWebServerRuntime** image run the following command (Dockerfile has to be in current working direcotry):
+In order to build **appWebServerRuntime** image run the following command (Dockerfile has to be in current working direcotry and allowed values for stage are dev, test, prod):
 ```shell
-DOCKER_BUILDKIT=1 docker build --target appWebServerRuntime -t danijelradakovic/servers:0.1.0-web .
+DOCKER_BUILDKIT=1 docker build --target appWebServerRuntime --build-args STAGE=dev -t danijelradakovic/servers:0.2.1 .
+```
+
+Building container images can also be achieved using docker compose.
+```shell
+docker compose --env-file env.conf build
+```
+
+Generate docker compose configuration with specified environment variables
+```shell
+docker compose --env-file env.conf config
+```
+
+Provision the infrastructure
+```shell
+docker compose --env-file env.conf up
+```
+
+Destroy the provisioned infrastructure
+```shell
+docker compose --env-file env.conf down -v
 ```
