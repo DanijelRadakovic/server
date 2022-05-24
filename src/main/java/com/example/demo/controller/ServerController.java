@@ -6,6 +6,8 @@ import com.example.demo.domain.Log;
 import com.example.demo.dto.ServerDTO;
 import com.example.demo.service.ServerService;
 import com.example.demo.util.RequestCounter;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -33,10 +35,14 @@ public class ServerController {
 
     private final ServerService service;
     private final RequestCounter counter;
+    private final Counter getRequests;
 
-    public ServerController(ServerService service, RequestCounter counter) {
+    public ServerController(ServerService service, RequestCounter counter, MeterRegistry registry) {
         this.service = service;
         this.counter = counter;
+        this.getRequests = Counter.builder("get_request")
+                .description("Number of HTTP GET requests for server endpoints")
+                .register(registry);
     }
 
     /**
@@ -48,6 +54,7 @@ public class ServerController {
     public ResponseEntity<List<ServerDTO>> getAll() throws IOException, TimeoutException {
         String logContent = String.format(LOG_GET_ALL, DEFAULT_USER, counter.get(EndpointConfiguration.SERVER_BASE_URL));
         LOGGER.info(logContent);
+        getRequests.increment();
         return new ResponseEntity<>(
                 ServerConverter.fromEntityList(service.getAll(), ServerConverter::fromEntity),
                 HttpStatus.OK
@@ -64,6 +71,7 @@ public class ServerController {
     public ResponseEntity<ServerDTO> getById(@PathVariable Long id) throws IOException, TimeoutException {
         String logContent = String.format(LOG_GET_BY_ID, id, DEFAULT_USER, counter.get(EndpointConfiguration.SERVER_ID_URL));
         LOGGER.info(logContent);
+        getRequests.increment();
         return new ResponseEntity<>(
                 ServerConverter.fromEntity(service.findById(id)),
                 HttpStatus.FOUND

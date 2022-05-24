@@ -1,3 +1,8 @@
+x-logging: &fluent-bit
+  driver: fluentd
+  options:
+    fluentd-address: ${FLUENT_BIT_ADDRESS}:24224
+
 services:
   gateway:
     build:
@@ -9,11 +14,13 @@ services:
     restart: on-failure
     networks:
       - servers
+      - monitoring
     ports:
       - "8000:8000"
     volumes:
       - ./front/nginx.conf:/etc/nginx/nginx.conf
       - ./front/api_gateway.conf:/etc/nginx/api_gateway.conf
+    logging: *fluent-bit
     depends_on:
       - servers
 
@@ -26,11 +33,14 @@ services:
     restart: on-failure
     networks:
       - servers
+      - monitoring
     environment:
       DATABASE_USERNAME: ${DATABASE_USERNAME}
       DATABASE_PASSWORD: ${DATABASE_PASSWORD}
       DATABASE_DOMAIN: ${DATABASE_DOMAIN}
       DATABASE_SCHEMA: ${DATABASE_SCHEMA}
+      JAEGER_DOMAIN: ${JAEGER_DOMAIN}
+    logging: *fluent-bit
     depends_on:
       database:
         condition: service_healthy
@@ -40,6 +50,7 @@ services:
     restart: always
     networks:
       - servers
+      - monitoring
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -51,11 +62,13 @@ services:
       timeout: 5s
     volumes:
       - database-data:/var/lib/postgresql/data
+    logging: *fluent-bit
 
   pgadmin:
     image: dpage/pgadmin4:5.3
     networks:
       - servers
+      - monitoring
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_ROOT_EMAIL}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_ROOT_PASSWORD}
@@ -63,6 +76,7 @@ services:
       - pgadmin:/var/lib/pgadmin
     ports:
       - "${PGADMIN_PUBLISHED_PORT-8081}:80"
+    logging: *fluent-bit
     depends_on:
       - database
 
@@ -76,3 +90,5 @@ networks:
   servers:
     name: servers
     driver: bridge
+  monitoring:
+    external: true

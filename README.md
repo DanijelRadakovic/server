@@ -100,3 +100,23 @@ pushd deployment
 docker compose up cleanup
 popd
 ```
+
+## Monitoring
+
+Create the monitoring stack with docker compose:
+```shell
+pushd monitoring
+docker compose up
+popd
+```
+
+Take the IP address of fluent-bit container and replace the value of FLUENT_BIT_ADDRESS variable
+in env.conf file:
+```shell
+docker network inspect monitoring
+```
+
+Create the application stack with docker compose:
+```shell
+docker compose --env-file env.conf up
+```
